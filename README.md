@@ -68,7 +68,7 @@ The **I14Y Interoperability Platform** (operated by the Swiss Federal Statistica
 ### Option 1: Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/fgouzi/mcp-i14y.git
+git clone https://github.com/I14Y-ch/mcp-i14y.git
 cd mcp-i14y
 cp .env.example .env
 docker compose up -d
@@ -79,7 +79,7 @@ The server will be available at `http://localhost:8400/mcp`.
 ### Option 2: Local setup with uv
 
 ```bash
-git clone https://github.com/fgouzi/mcp-i14y.git
+git clone https://github.com/I14Y-ch/mcp-i14y.git
 cd mcp-i14y
 uv sync
 uv run python main.py
@@ -526,7 +526,7 @@ Once connected, try asking your LLM assistant:
 ### Setup
 
 ```bash
-git clone https://github.com/fgouzi/mcp-i14y.git
+git clone https://github.com/I14Y-ch/mcp-i14y.git
 cd mcp-i14y
 uv sync
 cp .env.example .env

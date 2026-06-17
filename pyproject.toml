@@ -27,9 +27,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/fgouzi/mcp-i14y"
-Repository = "https://github.com/fgouzi/mcp-i14y"
-Issues = "https://github.com/fgouzi/mcp-i14y/issues"
+Homepage = "https://github.com/I14Y-ch/mcp-i14y"
+Repository = "https://github.com/I14Y-ch/mcp-i14y"
+Issues = "https://github.com/I14Y-ch/mcp-i14y/issues"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
