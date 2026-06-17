@@ -96,7 +96,8 @@ curl http://localhost:8400/health
 
 ## Connect to your AI assistant
 
-The MCP endpoint is `http://localhost:8400/mcp` (Streamable HTTP / JSON-RPC).
+The deployed MCP endpoint is `https://mcp.i14y.d.c.bfs.admin.ch/mcp` (Streamable HTTP / JSON-RPC).
+For local development, use `http://localhost:8400/mcp` after starting the server from the Quick Start.
 
 ### Claude Desktop
 
@@ -109,7 +110,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "i14y": {
       "type": "http",
-      "url": "http://localhost:8400/mcp"
+      "url": "https://mcp.i14y.d.c.bfs.admin.ch/mcp"
     }
   }
 }
@@ -118,7 +119,7 @@ Add to `claude_desktop_config.json`:
 ### Claude Code (CLI)
 
 ```bash
-/mcp add i14y http://localhost:8400/mcp
+/mcp add i14y https://mcp.i14y.d.c.bfs.admin.ch/mcp
 ```
 
 ### GitHub Copilot (VS Code)
@@ -139,7 +140,7 @@ To configure manually in another project, create `.vscode/mcp.json`:
   "servers": {
     "i14y": {
       "type": "http",
-      "url": "http://localhost:8400/mcp"
+      "url": "https://mcp.i14y.d.c.bfs.admin.ch/mcp"
     }
   }
 }
@@ -151,7 +152,7 @@ To configure manually in another project, create `.vscode/mcp.json`:
 2. Click **+ Add Connector** → **Custom MCP Connector**
 3. Fill in:
    - **Connector name**: `i14y`
-   - **Connection server URL**: `http://localhost:8400/mcp`
+   - **Connection server URL**: `https://mcp.i14y.d.c.bfs.admin.ch/mcp`
    - **Authentication**: None
 4. Click **Connect**
 5. Enable it in any conversation via the **Tools icon** (four squares) below the chat input
@@ -164,7 +165,7 @@ Add to your `config.toml`:
 [[mcp_servers]]
 name = "i14y"
 transport = "streamable-http"
-url = "http://localhost:8400/mcp"
+url = "https://mcp.i14y.d.c.bfs.admin.ch/mcp"
 ```
 
 Tools are then available as `i14y_list_datasets`, `i14y_get_concept`, etc.
@@ -172,7 +173,7 @@ Tools are then available as `i14y_list_datasets`, `i14y_get_concept`, etc.
 ### MCP Inspector (testing)
 
 ```bash
-npx @modelcontextprotocol/inspector http://localhost:8400/mcp
+npx @modelcontextprotocol/inspector https://mcp.i14y.d.c.bfs.admin.ch/mcp
 ```
 
 ---

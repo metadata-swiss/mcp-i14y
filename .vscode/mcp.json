@@ -2,7 +2,7 @@
   "servers": {
     "i14y": {
       "type": "http",
-      "url": "http://localhost:8400/mcp"
+      "url": "https://mcp.i14y.d.c.bfs.admin.ch/mcp"
     }
   }
 }
