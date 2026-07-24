@@ -48,7 +48,7 @@ async def test_client_raises_outside_context():
 # ── JSON response ──────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_get_returns_json_string():
+async def test_get_returns_json_object():
     mock_response = MagicMock()
     mock_response.headers = {"content-type": "application/json"}
     mock_response.json.return_value = {"data": [{"id": "abc"}], "totalItems": 1}
@@ -65,9 +65,8 @@ async def test_get_returns_json_string():
             client._client = mock_http
             result = await client.get("/datasets", page=1, pageSize=5)
 
-    parsed = json.loads(result)
-    assert parsed["totalItems"] == 1
-    assert parsed["data"][0]["id"] == "abc"
+    assert result["totalItems"] == 1
+    assert result["data"][0]["id"] == "abc"
 
 
 # ── Plain-text response (TTL) ──────────────────────────────────────────────────
@@ -91,7 +90,7 @@ async def test_get_returns_plain_text_for_turtle():
             client._client = mock_http
             result = await client.get("/catalogs/123/dcat/exports/ttl")
 
-    assert result == turtle_content
+    assert result["text"] == turtle_content
 
 
 # ── HTTP error handling ────────────────────────────────────────────────────────
@@ -116,6 +115,5 @@ async def test_get_handles_http_404():
             client._client = mock_http
             result = await client.get("/datasets/bad-id")
 
-    parsed = json.loads(result)
-    assert "error" in parsed
-    assert "404" in parsed["error"]
+    assert "error" in result
+    assert "404" in result["error"]

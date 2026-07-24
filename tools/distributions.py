@@ -190,7 +190,14 @@ def register(mcp: FastMCP) -> None:
         if "error" in dataset_response:
             return dataset_response
 
-        dataset_data = dataset_response.get("data")
+        dataset_data: Any
+        if isinstance(dataset_response.get("distributions"), list):
+            dataset_data = dataset_response
+        else:
+            dataset_data = dataset_response.get("data")
+            if isinstance(dataset_data, dict) and isinstance(dataset_data.get("data"), dict):
+                dataset_data = dataset_data["data"]
+
         if not isinstance(dataset_data, dict):
             return {
                 "error": "Dataset payload missing or invalid for dataset-by-id response.",

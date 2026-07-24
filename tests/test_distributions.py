@@ -85,6 +85,47 @@ async def test_get_dataset_distribution_content_json():
 
 
 @pytest.mark.asyncio
+async def test_get_dataset_distribution_content_with_nested_data_envelope():
+    payload = {"records": [{"id": 1, "value": "test"}]}
+    content = json.dumps(payload).encode()
+    dataset_response = {
+        "data": {
+            "data": {
+                "id": "ds-1",
+                "distributions": [
+                    {"id": "dist-1", "downloadUrl": {"uri": "https://example.com/data.json"}}
+                ],
+            }
+        }
+    }
+
+    mock_cm = AsyncMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=_make_stream_response(content, "application/json"))
+    mock_cm.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("helpers.i14y_api_client.I14YApiClient.get", new_callable=AsyncMock) as mock_get,
+        patch("httpx.AsyncClient.stream", return_value=mock_cm),
+    ):
+        mock_get.return_value = dataset_response
+        from mcp.server.fastmcp import FastMCP
+        from tools.distributions import register
+
+        mcp = FastMCP("test")
+        register(mcp)
+        tool = next(
+            t
+            for t in mcp._tool_manager.list_tools()
+            if t.name == "get_dataset_distribution_content"
+        )
+        result = await tool.fn(dataset_id="ds-1")
+
+    parsed = _as_dict(result)
+    assert parsed["data"]["records"][0]["id"] == 1
+    assert parsed["dataset_id"] == "ds-1"
+
+
+@pytest.mark.asyncio
 async def test_get_dataset_distribution_content_csv_by_id():
     csv_content = b"id,name,value\n1,Zurich,42\n2,Berne,17\n"
     dataset_response = {

@@ -91,9 +91,10 @@ def _wrap_json_with_pagination(data: Any, headers: httpx.Headers, path: str) -> 
     pagination = _pagination_from_headers(headers)
 
     if pagination is None:
-        return {"data": data}
+        return data
 
     next_page = pagination["next_page"]
+    items = _extract_items(data)
 
     return {
         "pagination": pagination,
@@ -103,7 +104,7 @@ def _wrap_json_with_pagination(data: Any, headers: httpx.Headers, path: str) -> 
             if pagination["has_more"]
             else "No more pages available."
         ),
-        "data": data,
+        "data": items if items else data,
     }
 
 
@@ -157,10 +158,11 @@ class I14YApiClient:
             **params: Query parameters; None values are stripped automatically.
 
         Returns:
-            A dict. JSON responses are returned under the ``data`` key, and
-            paginated JSON endpoints also include ``pagination`` metadata derived
-            from x-paging-* response headers. Text/RDF/CSV responses are returned
-            as ``{"content_type": ..., "text": ...}``.
+            A dict. Non-paginated JSON responses are returned as-is.
+            Paginated endpoints return ``{"pagination": ..., "data": ...}``
+            where ``data`` is the extracted item list when available.
+            Text/RDF/CSV responses are returned as
+            ``{"content_type": ..., "text": ...}``.
         """
         try:
             response = await self._get_response(path, **params)
