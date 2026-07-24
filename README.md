@@ -59,7 +59,7 @@ The **I14Y Interoperability Platform** (operated by the Swiss Federal Statistica
 | `get_agent`                       | Get full metadata for a publishing organisation                        |
 | `list_vocabularies`               | List all controlled vocabularies (themes, licenses, formats…)          |
 | `get_vocabulary`                  | Get all entries of a controlled vocabulary for RDF/DCAT-AP use         |
-| `get_distribution_content`        | Fetch the actual content of a distribution file (CSV, JSON, XML…)      |
+| `get_dataset_distribution_content` | Fetch distribution content using dataset ID + distribution selector      |
 
 ---
 
@@ -481,22 +481,24 @@ No parameters. Returns all available vocabulary configurations with their identi
 
 ### Distributions
 
-#### `get_distribution_content`
+#### `get_dataset_distribution_content`
 
 Fetch the actual data content of a DCAT distribution file.
 
 Typical workflow:
 
-1. Call `get_dataset(dataset_id)` → find `distributions[n].downloadUrl.uri`
-2. Call `get_distribution_content(url)` → returns the file content
+1. Call `get_dataset(dataset_id)`
+2. Call `get_dataset_distribution_content(dataset_id, distribution_index|distribution_id)`
 
 Supported formats: JSON, CSV, XML, RDF/Turtle, GeoJSON, plain text.
 Binary formats (PDF, ZIP, Excel, images) are rejected with an error message.
 
-| Parameter      | Type    | Default | Description                                                            |
-| -------------- | ------- | ------- | ---------------------------------------------------------------------- |
-| `download_url` | string  | —       | The `downloadUrl.uri` value from a distribution object                 |
-| `max_kb`       | integer | `200`   | Maximum content size in KB — larger files are truncated with a warning |
+| Parameter            | Type    | Default | Description                                                            |
+| -------------------- | ------- | ------- | ---------------------------------------------------------------------- |
+| `dataset_id`         | string  | —       | Dataset UUID                                                           |
+| `distribution_index` | integer | `0`     | Zero-based index in dataset distributions                              |
+| `distribution_id`    | string  | —       | Optional distribution UUID/ID (preferred when known)                  |
+| `max_kb`             | integer | `200`   | Maximum content size in KB — larger files are truncated with a warning |
 
 ---
 
