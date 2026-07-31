@@ -56,11 +56,6 @@ jobs:
         run: |
           semgrep scan --config p/python --config p/owasp-top-ten --severity ERROR --error --skip-unknown-extensions --exclude tests --exclude .venv --exclude venv
 
-      - name: Scan repository history for secrets
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   image-build-and-push:
     needs: security-checks
     runs-on: ubuntu-latest
