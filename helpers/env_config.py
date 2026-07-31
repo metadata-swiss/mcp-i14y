@@ -21,7 +21,9 @@ def get_base_url() -> str:
 
 
 def get_server_host() -> str:
-    return os.getenv("MCP_HOST", "0.0.0.0")
+    # Bind on all interfaces: required for Azure Container Apps ingress routing.
+    # Override via MCP_HOST env var for local dev if needed.
+    return os.getenv("MCP_HOST", "0.0.0.0")  # nosec B104
 
 
 def get_server_port() -> int:

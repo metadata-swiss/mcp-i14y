@@ -81,7 +81,9 @@ mcp = FastMCP(
 
         "Do not invent portal URLs/IRIs; only use URLs/IRIs returned by tools."
     ),
-    host="0.0.0.0",
+    # Bind on all interfaces: required for Azure Container Apps ingress routing.
+    # External exposure is controlled at the Container Apps ingress layer.
+    host="0.0.0.0",  # nosec B104
     port=get_server_port(),
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
