@@ -17,13 +17,55 @@ env:
   IMAGE_NAME: mcp-i14y
 
 jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d9e0f98d3fc6adb07d1e3d37f3043649ddad06a1 # v5
+
+      - name: Install application and dev dependencies
+        run: uv sync --all-groups
+
+      - name: Install security tools
+        run: python -m pip install --upgrade pip pip-audit==2.9.0 bandit==1.8.6 semgrep==1.98.0
+
+      - name: Run tests and Python security checks
+        run: |
+          python -m pip check
+          if [ -d tests ]; then uv run pytest tests/ -m 'not integration'; fi
+          # pip-audit scans the resolved dependency tree exported from the uv lockfile.
+          uv export --format requirements-txt --no-hashes --no-emit-project > /tmp/requirements.txt
+          python -m pip_audit -r /tmp/requirements.txt --progress-spinner off
+          # bandit is scoped to first-party source to avoid noise from tests and .venv.
+          python -m bandit -r helpers/ tools/ main.py -ll
+
+      - name: Run Semgrep OWASP security scan
+        run: |
+          semgrep scan --config p/python --config p/owasp-top-ten --severity ERROR --error --skip-unknown-extensions --exclude tests --exclude .venv --exclude venv
+
+      - name: Scan repository history for secrets
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   image-build-and-push:
+    needs: security-checks
     runs-on: ubuntu-latest
     environment: DEV
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Compose image tag
         run: |
@@ -32,7 +74,7 @@ jobs:
           echo "SHA=${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Azure Login (UAMI via OIDC)
-        uses: azure/login@v2
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
           client-id: ${{ secrets.AZURE_ACR_UAMI_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -45,22 +87,42 @@ jobs:
           az acr login --name "${AZURE_ACR}"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Build & push image
+      - name: Build image locally
         env:
           AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
         run: |
           IMAGE="${AZURE_ACR_LOGIN_SERVER}/${{ env.IMAGE_NAME }}"
-          echo "Building and pushing ${IMAGE}:$DOCKER_VERSION"
+          echo "IMAGE_FULL=${IMAGE}:${DOCKER_VERSION}" >> "$GITHUB_ENV"
+          echo "Building ${IMAGE}:$DOCKER_VERSION"
 
           docker buildx build . \
-            --push \
+            --load \
             --label org.opencontainers.image.version="$DOCKER_VERSION" \
             --label org.opencontainers.image.revision="$SHA" \
             -t "$IMAGE:$DOCKER_VERSION" \
             -t "$IMAGE:${SHA}" \
             -t "$IMAGE:latest"
+
+      - name: Scan final image for fixable High and Critical vulnerabilities
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_FULL }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: vuln
+          severity: HIGH,CRITICAL
+
+      - name: Push scanned image
+        env:
+          AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+        run: |
+          IMAGE="${AZURE_ACR_LOGIN_SERVER}/${{ env.IMAGE_NAME }}"
+          docker push "$IMAGE:$DOCKER_VERSION"
+          docker push "$IMAGE:${SHA}"
+          docker push "$IMAGE:latest"
 
       - name: Deploy to DEV
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from helpers.i14y_api_client import I14YApiClient
+from helpers.safe_url import is_safe_public_url
 from mcp.server.fastmcp import FastMCP
 
 __all__ = ["register"]
@@ -68,13 +69,37 @@ def _extract_download_url(distribution: dict[str, Any]) -> str | None:
 async def _fetch_distribution_from_url(download_url: str, max_kb: int) -> dict[str, Any]:
     max_bytes = max_kb * 1024
 
+    # SSRF guard: distribution URLs are published by third parties via the I14Y
+    # API. Refuse to fetch anything that resolves to a non-public IP so a
+    # malicious publisher cannot pivot into internal networks (cloud metadata
+    # endpoints, RFC1918 hosts, loopback, etc.).
+    safe, reason = is_safe_public_url(download_url)
+    if not safe:
+        return {
+            "error": f"Refused unsafe URL: {reason}",
+            "url": download_url,
+        }
+
     try:
         async with httpx.AsyncClient(
             headers={"User-Agent": USER_AGENT},
-            follow_redirects=True,
+            follow_redirects=False,
             timeout=30.0,
         ) as client:
             async with client.stream("GET", download_url) as response:
+                # Refuse redirects explicitly: following them would re-open the
+                # SSRF window on the second hop (the redirect target is not
+                # validated).
+                if 300 <= response.status_code < 400:
+                    return {
+                        "error": (
+                            f"URL returned redirect ({response.status_code}) which is "
+                            "not supported for security reasons. Please use the "
+                            "direct target URL."
+                        ),
+                        "url": download_url,
+                    }
+
                 response.raise_for_status()
 
                 content_type = response.headers.get("content-type", "")
