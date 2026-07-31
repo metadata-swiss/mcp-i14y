@@ -142,8 +142,9 @@ async def test_get_dataset_structure_invalid_format():
     tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_dataset_structure")
     result = await tool.fn(dataset_id="ds-001", format="xml")
 
-    parsed = json.loads(result)
-    assert "error" in parsed
+    # Tool returns a dict on error path, not a JSON string.
+    assert isinstance(result, dict)
+    assert "error" in result
 
 
 @pytest.mark.asyncio
@@ -164,7 +165,8 @@ async def test_get_dataset_structure_valid():
 @pytest.mark.asyncio
 async def test_get_dataset_by_identifier():
     with patch("helpers.i14y_api_client.I14YApiClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = MOCK_DATASET_BY_IDENTIFIER_RESPONSE
+        # I14YApiClient.get returns a decoded dict, not a JSON string.
+        mock_get.return_value = json.loads(MOCK_DATASET_BY_IDENTIFIER_RESPONSE)
         from tools.datasets import register
         from mcp.server.fastmcp import FastMCP
 
@@ -174,8 +176,9 @@ async def test_get_dataset_by_identifier():
         tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_dataset_by_identifier")
         result = await tool.fn(identifier="px-x-0602010000_109")
 
-    parsed = json.loads(result)
-    assert parsed["identifier"] == "px-x-0602010000_109"
+    # Tool returns data[0] directly (a dict).
+    assert isinstance(result, dict)
+    assert result["identifier"] == "px-x-0602010000_109"
 
 
 @pytest.mark.asyncio

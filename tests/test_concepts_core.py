@@ -55,7 +55,8 @@ MOCK_SEARCH_ENTRIES = json.dumps({
 @pytest.mark.asyncio
 async def test_get_concept_by_identifier():
     with patch("helpers.i14y_api_client.I14YApiClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = json.dumps({"data": json.loads(MOCK_CONCEPT_BY_ID)})
+        # I14YApiClient.get returns a decoded dict, not a JSON string.
+        mock_get.return_value = {"data": json.loads(MOCK_CONCEPT_BY_ID)}
         from mcp.server.fastmcp import FastMCP
         from tools.concepts import register
 
@@ -64,9 +65,10 @@ async def test_get_concept_by_identifier():
         tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_concept_by_identifier")
         result = await tool.fn(identifier="HGDE_KT")
 
-    parsed = json.loads(result)
-    assert parsed[0]["identifier"] == "HGDE_KT"
-    assert parsed[0]["conceptType"] == "CodeList"
+    # Tool returns the unwrapped "data" list directly.
+    assert isinstance(result, list)
+    assert result[0]["identifier"] == "HGDE_KT"
+    assert result[0]["conceptType"] == "CodeList"
 
 
 @pytest.mark.asyncio

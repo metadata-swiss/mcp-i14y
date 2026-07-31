@@ -78,7 +78,8 @@ async def test_get_dataservice():
 @pytest.mark.asyncio
 async def test_get_dataservice_by_identifier():
     with patch("helpers.i14y_api_client.I14YApiClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = MOCK_DATASERVICE_BY_IDENTIFIER_RESPONSE
+        # I14YApiClient.get returns a decoded dict, not a JSON string.
+        mock_get.return_value = json.loads(MOCK_DATASERVICE_BY_IDENTIFIER_RESPONSE)
         from tools.dataservices import register
         from mcp.server.fastmcp import FastMCP
 
@@ -88,5 +89,6 @@ async def test_get_dataservice_by_identifier():
         tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_dataservice_by_identifier")
         result = await tool.fn(identifier="geo-api")
 
-    parsed = json.loads(result)
-    assert parsed["identifier"] == "geo-api"
+    # Tool returns data[0] directly (a dict).
+    assert isinstance(result, dict)
+    assert result["identifier"] == "geo-api"

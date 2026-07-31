@@ -145,5 +145,6 @@ async def test_get_mappingtable_relations_invalid_format():
     tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_mappingtable_relations")
     result = await tool.fn(mappingtable_id="mt-001", format="xml")
 
-    parsed = json.loads(result)
-    assert "error" in parsed
+    # Tool returns a dict on error path, not a JSON string.
+    assert isinstance(result, dict)
+    assert "error" in result

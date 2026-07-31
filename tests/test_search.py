@@ -80,5 +80,6 @@ async def test_full_text_search_invalid_type():
     tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "full_text_search_resources")
     result = await tool.fn(query="canton", types=["InvalidType"])
 
-    parsed = json.loads(result)
-    assert "error" in parsed
+    # Tool returns a dict on error path, not a JSON string.
+    assert isinstance(result, dict)
+    assert "error" in result

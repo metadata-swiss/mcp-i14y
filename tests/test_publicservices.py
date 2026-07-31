@@ -77,7 +77,8 @@ async def test_get_publicservice():
 @pytest.mark.asyncio
 async def test_get_publicservice_by_identifier():
     with patch("helpers.i14y_api_client.I14YApiClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = MOCK_PUBLICSERVICE_BY_IDENTIFIER_RESPONSE
+        # I14YApiClient.get returns a decoded dict, not a JSON string.
+        mock_get.return_value = json.loads(MOCK_PUBLICSERVICE_BY_IDENTIFIER_RESPONSE)
         from tools.publicservices import register
         from mcp.server.fastmcp import FastMCP
 
@@ -87,5 +88,6 @@ async def test_get_publicservice_by_identifier():
         tool = next(t for t in mcp._tool_manager.list_tools() if t.name == "get_publicservice_by_identifier")
         result = await tool.fn(identifier="tax-declaration-service")
 
-    parsed = json.loads(result)
-    assert parsed["identifier"] == "tax-declaration-service"
+    # Tool returns data[0] directly (a dict).
+    assert isinstance(result, dict)
+    assert result["identifier"] == "tax-declaration-service"
