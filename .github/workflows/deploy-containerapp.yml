@@ -121,14 +121,26 @@ jobs:
             -t "$IMAGE:latest"
 
       - name: Scan final image for fixable High and Critical vulnerabilities
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-        with:
-          image-ref: ${{ env.IMAGE_FULL }}
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          scanners: vuln
-          severity: HIGH,CRITICAL
+        # Trivy CLI (Apache-2.0) installed directly instead of via
+        # aquasecurity/trivy-action, whose install.sh has been failing
+        # silently on the pinned v0.65.0 release.
+        env:
+          TRIVY_VERSION: "0.72.0"
+          TRIVY_SHA256: "bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea"
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+          /tmp/trivy --version
+          /tmp/trivy image \
+            --format table \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            "${IMAGE_FULL}"
 
       - name: Push scanned image
         env:
