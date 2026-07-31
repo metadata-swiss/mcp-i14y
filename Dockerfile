@@ -1,5 +1,14 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
+# Apply Debian security updates on top of the pinned base image.
+# The upstream uv image is rebuilt on a slower cadence than the Debian
+# security tracker, so we refresh libssl3/libgnutls30/libcap2/openssl/etc.
+# to close HIGH/CRITICAL CVEs at build time (verified by Trivy in CI).
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get -y clean \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Install dependencies first for layer cache
